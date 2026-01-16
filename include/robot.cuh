@@ -1,0 +1,49 @@
+#ifndef ROBOT_CUH
+#define ROBOT_CUH
+
+#include "geometry.cuh"
+#include <vector>
+#include <map>
+
+enum JOINT_TYPE {
+    REVOLUTE,
+    PRISMATIC
+};
+
+struct Joint {
+    std::string name;
+    JOINT_TYPE type;
+
+    vec3 origin_xyz;
+    quat4 origin_rpy;
+    vec3 axis;
+
+    double lower_limit;
+    double upper_limit;
+
+    int parent_link_idx;
+    int child_link_idx;
+};
+
+struct Link {
+    std::string name;
+    Primitive shape;
+};
+
+struct Robot {
+    std::string name;
+    std::vector<Link> links;
+    std::vector<Joint> joints;
+    
+    std::map<std::string, int> link_name_to_idx;
+    std::map<std::string, int> joint_name_to_idx;
+    
+    int root_link_idx;
+    
+    int get_link_idx(const std::string& name) const;
+    int get_joint_idx(const std::string& name) const;
+    
+    int num_dof() const;
+};
+
+#endif
