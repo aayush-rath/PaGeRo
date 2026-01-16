@@ -69,6 +69,18 @@ target_link_libraries(test_sdf PRIVATE geom_core)
 set_target_properties(test_sdf PROPERTIES CUDA_SEPARABLE_COMPILATION ON)
 
 # ============================================================================
+# Loading Test Executable
+# ============================================================================
+
+add_executable(test_loading
+    ${CMAKE_SOURCE_DIR}/test/test_loading.cu
+)
+
+target_include_directories(test_loading PRIVATE ${CMAKE_SOURCE_DIR}/include)
+target_link_libraries(test_loading PRIVATE geom_core)
+set_target_properties(test_loading PROPERTIES CUDA_SEPARABLE_COMPILATION ON)
+
+# ============================================================================
 # Visualization Library (Only if dependencies found)
 # ============================================================================
 
