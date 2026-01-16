@@ -592,7 +592,7 @@ void Visualizer::draw_cylinder(const Cylinder& cylinder, const vec3& color) {
     for (int i = 0; i < 3; i++) {
         model[i * 4 + 0] *= cylinder.radius;
         model[i * 4 + 1] *= cylinder.radius;
-        model[i * 4 + 2] *= cylinder.height;
+        model[i * 4 + 2] *= cylinder.height / 2;
     }
 
     model[12] = cylinder.center.x();

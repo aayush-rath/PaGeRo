@@ -19,6 +19,15 @@ public:
     __host__ __device__ double norm2() const {return e0 * e0 + e1 * e1 + e2 * e2; }
     __host__ __device__ double norm() const {return sqrt(norm2()); }
 
+    __host__ __device__ double operator+=(const vec3& u) {
+        e0 += u.x(); e1 += u.y(); e2 += u.z();
+    }
+
+    __host__ __device__ double operator-=(const vec3& u) {
+        e0 -= u.x(); e1 -= u.y(); e2 -= u.z();
+    }
+
+
 private:
     double e0, e1, e2;
 };

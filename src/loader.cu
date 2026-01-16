@@ -39,6 +39,12 @@ void Scene::add_cylinder(vec3 center, double radius, double height, quat4 orient
     primitives.push_back(prim);
 }
 
+void Scene::add_robot(Robot robot) {
+    for (const auto& link : robot.links) {
+        primitives.push_back(link.shape);
+    }
+}
+
 Scene load_scene_json(const char* filename) {
     Scene scene;
 
@@ -105,7 +111,7 @@ Robot load_urdf(const char* filename) {
     }
 
     robot.name = robot_elem->Attribute("name") ? robot_elem->Attribute("name") : "unnamed";
-
+    double curr_length = 0.0;
     for (tinyxml2::XMLElement* link_elem = robot_elem->FirstChildElement("link");
         link_elem != nullptr;
         link_elem = link_elem->NextSiblingElement("link"))  
@@ -148,7 +154,8 @@ Robot load_urdf(const char* filename) {
                     if (origin_elm && origin_elm->Attribute("xyz")) {
                         float x, y, z;
                         sscanf(origin_elm->Attribute("xyz"), "%f %f %f", &x, &y, &z);
-                        center = vec3(x, y, z);
+                        center = vec3(x, y, z + curr_length);
+                        curr_length += length;
                     }
                     if (origin_elm && origin_elm->Attribute("rpy")) {
                         float r, p, y;
@@ -164,9 +171,6 @@ Robot load_urdf(const char* filename) {
         robot.links.push_back(link);
         robot.link_name_to_idx[link.name] = link_idx;
     }
-
-
-    std::cout << "Loaded " << robot.links.size() << " links" << std::endl;
 
 
     for (tinyxml2::XMLElement* joint_elm = robot_elem->FirstChildElement("joint");
@@ -209,8 +213,6 @@ Robot load_urdf(const char* filename) {
         robot.joint_name_to_idx[joint.name] = robot.joints.size() - 1;
     }
 
-    std::cout << "Loaded " << robot.joints.size() << " joints" << std::endl;
-
     std::vector<bool> is_child(robot.links.size(), false);
     for (const auto& joint : robot.joints) {
         if (joint.child_link_idx >= 0) {
@@ -228,7 +230,5 @@ Robot load_urdf(const char* filename) {
     }
     
     std::cout << "Robot '" << robot.name << "' loaded successfully" << std::endl;
-    std::cout << "DOF: " << robot.num_dof() << std::endl;
-
     return robot;
 }

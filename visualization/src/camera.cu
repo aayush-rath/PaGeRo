@@ -54,8 +54,8 @@ void Camera::on_mouse_move(double xpos, double ypos) {
         vec3 right(cos(yaw_rad), sin(yaw_rad), 0);
         vec3 up(-sin(yaw_rad), cos(yaw_rad), 0);
 
-        target = target - right * (dx * speed);
-        target = target - up * (dy * speed);
+        target = target - right * (dy * speed);
+        target = target - up * (dx * speed);
     }
 
     last_mouse_x = xpos;

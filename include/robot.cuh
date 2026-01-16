@@ -4,6 +4,7 @@
 #include "geometry.cuh"
 #include <vector>
 #include <map>
+#include <iostream>
 
 enum JOINT_TYPE {
     REVOLUTE,
@@ -45,5 +46,13 @@ struct Robot {
     
     int num_dof() const {return joints.size(); }
 };
+
+
+inline std::ostream& operator<<(std::ostream& os, const Robot& robot) {
+    os << "Robot '" << robot.name << "'" << std::endl;
+    os << "         Links: " << robot.links.size() << std::endl;
+    os << "         DOF: " << robot.num_dof() << std::endl;
+    return os;
+}
 
 #endif
