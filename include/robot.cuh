@@ -40,10 +40,10 @@ struct Robot {
     
     int root_link_idx;
     
-    int get_link_idx(const std::string& name) const;
-    int get_joint_idx(const std::string& name) const;
+    int get_link_idx(const std::string& name) const { return link_name_to_idx.at(name); };
+    int get_joint_idx(const std::string& name) const { return joint_name_to_idx.at(name); };
     
-    int num_dof() const;
+    int num_dof() const {return joints.size(); }
 };
 
 #endif

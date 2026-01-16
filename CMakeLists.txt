@@ -30,6 +30,9 @@ else()
     message(STATUS "  sudo apt-get install libglfw3-dev libglew-dev libgl1-mesa-dev")
 endif()
 
+find_package(tinyxml2 REQUIRED)
+find_package(nlohmann_json REQUIRED)
+
 # ============================================================================
 # Core Library (loader.cu + geometry)
 # ============================================================================
@@ -38,7 +41,16 @@ add_library(geom_core STATIC
     ${CMAKE_SOURCE_DIR}/src/loader.cu
 )
 
-target_include_directories(geom_core PUBLIC ${CMAKE_SOURCE_DIR}/include)
+target_include_directories(geom_core PUBLIC 
+    ${CMAKE_SOURCE_DIR}/include
+    ${TinyXML2_INCLUDE_DIRS}
+    ${nlohmann_json_INCLUDE_DIRS}
+)
+target_link_libraries(geom_core
+    PUBLIC
+        tinyxml2::tinyxml2
+        nlohmann_json::nlohmann_json
+)
 set_target_properties(geom_core PROPERTIES 
     CUDA_SEPARABLE_COMPILATION ON
     POSITION_INDEPENDENT_CODE ON
@@ -74,6 +86,8 @@ if(BUILD_VISUALIZER)
         PUBLIC 
             ${CMAKE_SOURCE_DIR}/visualization/include
             ${CMAKE_SOURCE_DIR}/include
+            ${TinyXML2_INCLUDE_DIRS}
+            ${nlohmann_json_INCLUDE_DIRS}
     )
     
     target_link_libraries(viz_lib
@@ -81,6 +95,8 @@ if(BUILD_VISUALIZER)
             OpenGL::GL
             GLEW::GLEW
             glfw
+            tinyxml2::tinyxml2
+            nlohmann_json::nlohmann_json
     )
     
     set_target_properties(viz_lib PROPERTIES 
@@ -100,6 +116,8 @@ if(BUILD_VISUALIZER)
         PRIVATE 
             ${CMAKE_SOURCE_DIR}/include
             ${CMAKE_SOURCE_DIR}/visualization/include
+            ${TinyXML2_INCLUDE_DIRS}
+            ${nlohmann_json_INCLUDE_DIRS}
     )
     
     target_link_libraries(test_viz
@@ -109,6 +127,8 @@ if(BUILD_VISUALIZER)
             OpenGL::GL
             GLEW::GLEW
             glfw
+            tinyxml2::tinyxml2
+            nlohmann_json::nlohmann_json
     )
     
     set_target_properties(test_viz PROPERTIES CUDA_SEPARABLE_COMPILATION ON)

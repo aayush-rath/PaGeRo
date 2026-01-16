@@ -229,4 +229,6 @@ Robot load_urdf(const char* filename) {
     
     std::cout << "Robot '" << robot.name << "' loaded successfully" << std::endl;
     std::cout << "DOF: " << robot.num_dof() << std::endl;
+
+    return robot;
 }

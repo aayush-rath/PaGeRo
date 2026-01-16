@@ -102,13 +102,13 @@ struct Primitive {
     }
 };
 
-__host__ __device__
+__host__ __device__ __forceinline__
 double distance(const Sphere& a, const Sphere& b) {
     double d = length(b.center - a.center);
     return d - (a.radius + b.radius);
 }
 
-__host__ __device__
+__host__ __device__ __forceinline__
 double distance(const Cylinder& a, const Cylinder& b) {
     vec3 za = rotate(vec3(0,0,1), a.orientation);
     vec3 zb = rotate(vec3(0,0,1), b.orientation);
@@ -134,7 +134,7 @@ double distance(const Cylinder& a, const Cylinder& b) {
     return centerDist - (a.radius + b.radius);
 }
 
-__host__ __device__
+__host__ __device__ __forceinline__
 double distance(const Box& a, const Box& b) {
     vec3 axes[3] = {
         rotate(vec3(1,0,0), a.orientation),
@@ -155,7 +155,7 @@ double distance(const Box& a, const Box& b) {
 }
 
 
-__host__ __device__
+__host__ __device__ __forceinline__
 double distance(const Sphere& s, const Box& b) {
     vec3 p = rotate(s.center - b.center, b.orientation.inverse());
     vec3 h = b.size * 0.5;
@@ -170,7 +170,7 @@ double distance(const Sphere& s, const Box& b) {
     return d - s.radius;
 }
 
-__host__ __device__
+__host__ __device__ __forceinline__
 double distance(const Sphere& s, const Cylinder& c) {
     vec3 p = rotate(s.center - c.center, c.orientation.inverse());
 
@@ -187,7 +187,7 @@ double distance(const Sphere& s, const Cylinder& c) {
     return outside + inside - s.radius;
 }
 
-__host__ __device__
+__host__ __device__ __forceinline__
 double distance(const Box& b, const Cylinder& c) {
     double minDist = 1e30;
 
