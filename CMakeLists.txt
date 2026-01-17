@@ -123,8 +123,18 @@ if(BUILD_VISUALIZER)
     add_executable(test_viz
         ${CMAKE_SOURCE_DIR}/test/test_viz.cu
     )
+    add_executable(test_robot_viz
+        ${CMAKE_SOURCE_DIR}/test/test_robot_viz.cu
+    )
     
     target_include_directories(test_viz 
+        PRIVATE 
+            ${CMAKE_SOURCE_DIR}/include
+            ${CMAKE_SOURCE_DIR}/visualization/include
+            ${TinyXML2_INCLUDE_DIRS}
+            ${nlohmann_json_INCLUDE_DIRS}
+    )
+    target_include_directories(test_robot_viz 
         PRIVATE 
             ${CMAKE_SOURCE_DIR}/include
             ${CMAKE_SOURCE_DIR}/visualization/include
@@ -134,7 +144,7 @@ if(BUILD_VISUALIZER)
     
     target_link_libraries(test_viz
         PRIVATE
-            geom_core      # ADD THIS - links loader.cu
+            geom_core
             viz_lib
             OpenGL::GL
             GLEW::GLEW
@@ -142,8 +152,20 @@ if(BUILD_VISUALIZER)
             tinyxml2::tinyxml2
             nlohmann_json::nlohmann_json
     )
+    target_link_libraries(test_robot_viz
+        PRIVATE
+            geom_core
+            viz_lib
+            OpenGL::GL
+            GLEW::GLEW
+            glfw
+            tinyxml2::tinyxml2
+            nlohmann_json::nlohmann_json
+    )
+
     
     set_target_properties(test_viz PROPERTIES CUDA_SEPARABLE_COMPILATION ON)
+    set_target_properties(test_robot_viz PROPERTIES CUDA_SEPARABLE_COMPILATION ON)
     
     # Copy shaders to build directory
     file(COPY ${CMAKE_SOURCE_DIR}/visualization/shaders
@@ -151,6 +173,7 @@ if(BUILD_VISUALIZER)
     
     message(STATUS "")
     message(STATUS "Visualization executable 'test_viz' will be built")
+    message(STATUS "Visualization executable 'test_robot_viz' will be built")
     message(STATUS "")
 endif()
 

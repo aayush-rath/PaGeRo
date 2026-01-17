@@ -11,10 +11,17 @@ public:
     Visualizer(int width = 1280, int height = 720);
     ~Visualizer();
 
-    bool init(std::vector<std::string>& files, const char* title = "SDF Visualizer");
+    bool init(std::vector<std::string>& files, const char* title = "PaGeRo");
 
     void set_scene(Scene* scene);
     void run();
+
+    void set_robot(Kinematics* kinematics);
+    void update_robot();
+    void clear_robot();
+    void set_active_joint(int joint_idx);
+    int get_active_joint() const;
+    int get_num_dof() const;
 
     void set_show_grid(bool show) {show_grid = show; }
     void set_show_axes(bool show) {show_axes = show; }
@@ -29,6 +36,13 @@ private:
     Scene* scene;
 
     Camera camera;
+
+    Kinematics *robot_kinematics;
+    std::vector<Primitive> robot_primitives;
+    bool show_robot;
+    vec3 robot_color;
+    int active_joint;
+    int num_dof;
 
     bool show_grid;
     bool show_axes;
@@ -54,9 +68,11 @@ private:
     void render_grid();
     void render_axes();
     void render_ground();
+    void render_robot();
     void draw_box(const Box& box, const vec3& color);
     void draw_sphere(const Sphere& sphere, const vec3& color);
     void draw_cylinder(const Cylinder& cylinder, const vec3& color);
+    void draw_robot_primitive(const Primitive& prim, const vec3& color);
 
     static void mouse_button_callback(GLFWwindow* window, int button, int action, int mods);
     static void cursor_button_callback(GLFWwindow* window, double xpos, double ypos);

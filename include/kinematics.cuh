@@ -23,6 +23,7 @@ public:
         joint_positions.resize(robot.num_dof(), 0.0);
         link_transforms.resize(robot.links.size());
         build_kinematic_tree();
+        update_forward_kinematics(); // Initialize to zero configuration
     }
 
     void set_joint_position(int joint_idx, double value) {
@@ -43,7 +44,7 @@ public:
     void set_joint_positions(const std::vector<double>& configuration) {
         if (configuration.size() != joint_positions.size()) {
             std::cerr << "[ERROR]: Expected " << joint_positions.size()
-                    << " joint positions but got" << configuration.size() << std::endl;
+                    << " joint positions but got " << configuration.size() << std::endl;
             return;
         }
         for (int i = 0; i < configuration.size(); i++) {
@@ -92,6 +93,10 @@ public:
         return link_transforms[idx];
     }
 
+    const Robot& get_robot() const {
+        return robot;
+    }
+
 private:
     Robot robot;
     std::vector<double> joint_positions;
@@ -120,9 +125,9 @@ private:
             traversal_order.push_back(link_idx);
 
             for (const auto& joint : robot.joints) {
-                if (joint.child_link_idx == link_idx) {
-                    queue.push(joint.parent_link_idx);
-                    visited[joint.parent_link_idx] = true;
+                if (joint.parent_link_idx == link_idx && !visited[joint.child_link_idx]) {
+                    queue.push(joint.child_link_idx);
+                    visited[joint.child_link_idx] = true;
                 }
             }
         }
@@ -138,8 +143,8 @@ private:
             quat4 joint_motion = quat_from_axis_angle(joint.axis, q);
             result.rotation = result.rotation * joint_motion;
         } else if (joint.type == PRISMATIC) {
-            vec3 joint_motion = vec3(0.0, 0.0, q);
-            result.translation += joint_motion;
+            vec3 joint_motion = joint.axis * q;
+            result.translation = result.translation + joint_motion;
         }
 
         return result;

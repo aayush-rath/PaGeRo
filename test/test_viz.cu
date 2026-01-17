@@ -9,8 +9,7 @@ int main() {
     scene.add_box(vec3(0, 0.4, 0.5), vec3(0.5, 0.5, 0.5), quat4(1, 0, 0, 0));
     scene.add_sphere(vec3(2, 0, 0.5), 0.5);
     scene.add_cylinder(vec3(-2, 0, 1), 0.3, 1.0, quat4(1, 0, 0, 0));
-    scene.add_robot(robot1);
-    
+
     quat4 rot = quat_from_axis_angle(vec3(0, 0, 1), M_PI / 4);
     scene.add_box(vec3(0, 2, 0.5), vec3(0.3, 0.3, 0.3), rot);
 
@@ -24,7 +23,7 @@ int main() {
     shader_files.push_back("../visualization/shaders/frag.shader");
 
     Visualizer viz(1280, 720);
-    if (!viz.init(shader_files, "SDF Scene Viewer")) {
+    if (!viz.init(shader_files)) {
         std::cerr << "Failed to initialize visualizer!" << std::endl;
         return 1;
     }

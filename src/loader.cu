@@ -39,12 +39,6 @@ void Scene::add_cylinder(vec3 center, double radius, double height, quat4 orient
     primitives.push_back(prim);
 }
 
-void Scene::add_robot(Robot robot) {
-    for (const auto& link : robot.links) {
-        primitives.push_back(link.shape);
-    }
-}
-
 Scene load_scene_json(const char* filename) {
     Scene scene;
 
@@ -154,7 +148,7 @@ Robot load_urdf(const char* filename) {
                     if (origin_elm && origin_elm->Attribute("xyz")) {
                         float x, y, z;
                         sscanf(origin_elm->Attribute("xyz"), "%f %f %f", &x, &y, &z);
-                        center = vec3(x, y, z + curr_length);
+                        center = vec3(x, y, z);
                         curr_length += length;
                     }
                     if (origin_elm && origin_elm->Attribute("rpy")) {
@@ -179,7 +173,8 @@ Robot load_urdf(const char* filename) {
     {
         Joint joint;
         joint.name = joint_elm->Attribute("name");
-        joint.type = joint_elm->Attribute("type") == "revolute" ? REVOLUTE : PRISMATIC;
+        // const char* type_str = joint_elm->Attribute("type");
+        joint.type = REVOLUTE;
 
         tinyxml2::XMLElement* origin_elm = joint_elm->FirstChildElement("origin");
         tinyxml2::XMLElement* parent_elm = joint_elm->FirstChildElement("parent");
@@ -187,6 +182,7 @@ Robot load_urdf(const char* filename) {
 
         joint.child_link_idx = robot.link_name_to_idx[child_elm->Attribute("link")];
         joint.parent_link_idx = robot.link_name_to_idx[parent_elm->Attribute("link")];
+        tinyxml2::XMLElement* axis_elm = joint_elm->FirstChildElement("axis");
 
         if (origin_elm && origin_elm->Attribute("xyz")) {
             float x, y, z;
@@ -198,9 +194,9 @@ Robot load_urdf(const char* filename) {
             sscanf(origin_elm->Attribute("rpy"), "%f %f %f", &r, &p, &y);
             joint.origin_rpy = euler_to_quat(r, p, y);
         }
-        if (joint_elm->Attribute("axis")) {
+        if (axis_elm) {
             float x, y, z;
-            sscanf(joint_elm->Attribute("axis"), "%f %f %f", &x, &y, &z);
+            sscanf(axis_elm->Attribute("xyz"), "%f %f %f", &x, &y, &z);
             joint.axis = vec3(x, y, z);
         }
 

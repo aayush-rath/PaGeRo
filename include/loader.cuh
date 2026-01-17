@@ -1,6 +1,7 @@
 #pragma once
 #include "geometry.cuh"
 #include "robot.cuh"
+#include "kinematics.cuh"
 #include <vector>
 
 struct Scene {
@@ -12,7 +13,6 @@ struct Scene {
     void add_sphere(vec3 center, double radius);
     void add_box(vec3 center, vec3 size, quat4 orientation);
     void add_cylinder(vec3 center, double radius, double half_height, quat4 orientation);
-    void add_robot(Robot robot);
 };
 
 

@@ -494,7 +494,6 @@ void Visualizer::render_ground() {
     glUniformMatrix4fv(glGetUniformLocation(shader_program, "model"), 
                        1, GL_FALSE, model);
     
-    // Draw a large grid
     float grid_size = 50.0f;
     int divisions = 50;
     
@@ -589,11 +588,17 @@ void Visualizer::draw_cylinder(const Cylinder& cylinder, const vec3& color) {
     float model[16];
     quat_to_mat(cylinder.orientation, model);
 
-    for (int i = 0; i < 3; i++) {
-        model[i * 4 + 0] *= cylinder.radius;
-        model[i * 4 + 1] *= cylinder.radius;
-        model[i * 4 + 2] *= cylinder.height / 2;
-    }
+    model[0] *= cylinder.radius;
+    model[1] *= cylinder.radius;
+    model[2] *= cylinder.radius;
+
+    model[4] *= cylinder.radius;
+    model[5] *= cylinder.radius;
+    model[6] *= cylinder.radius;
+
+    model[8] *= cylinder.height / 2;
+    model[9] *= cylinder.height / 2;
+    model[10] *= cylinder.height / 2;
 
     model[12] = cylinder.center.x();
     model[13] = cylinder.center.y();
@@ -634,6 +639,7 @@ void Visualizer::render() {
     render_ground();
     render_grid();
     render_axes();
+    render_robot();
 
     if (scene) {
         if (show_wireframe) {
@@ -670,6 +676,73 @@ void Visualizer::run() {
     }
 }
 
+void Visualizer::set_robot(Kinematics* kinematics) {
+    robot_kinematics = kinematics;
+    vec3 color(1.0, 0.8, 0.8);
+    num_dof = kinematics->get_robot().num_dof();
+    active_joint = 0;
+
+    show_robot = true;
+    update_robot();
+}
+
+void Visualizer::update_robot() {
+    if (robot_kinematics) {
+        robot_primitives = robot_kinematics->get_transformed_primitives();
+    }
+}
+
+void Visualizer::clear_robot() {
+    robot_kinematics = nullptr;
+    robot_primitives.clear();
+    show_robot = false;
+}
+
+void Visualizer::render_robot() {
+    std::vector<vec3> link_colors = {
+        vec3(0.8, 0.3, 0.3),
+        vec3(0.3, 0.8, 0.3),
+        vec3(0.3, 0.3, 0.8),
+        vec3(0.8, 0.8, 0.3),
+        vec3(0.8, 0.3, 0.8),
+        vec3(0.3, 0.8, 0.8),
+    };
+    if (show_wireframe) {
+        glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+    }
+    for (int i = 0; i < robot_primitives.size(); i++) {
+        draw_robot_primitive(robot_primitives[i], link_colors[i]);
+    }
+}
+
+void Visualizer::draw_robot_primitive(const Primitive& primitive, const vec3& color) {
+    switch (primitive.type) {
+    case PRIM_SPHERE:
+        draw_sphere(primitive.data.sphere, color);
+        break;
+
+    case PRIM_BOX:
+        draw_box(primitive.data.box, color);
+        break;   
+
+    case PRIM_CYLINDER:
+        draw_cylinder(primitive.data.cylinder, color);
+        break;
+    }
+}
+
+void Visualizer::set_active_joint(int joint_idx) {
+    active_joint = joint_idx;
+}
+
+int Visualizer::get_active_joint() const {
+    return active_joint;
+}
+
+int Visualizer::get_num_dof() const {
+    return num_dof;
+}
+
 void Visualizer::mouse_button_callback(GLFWwindow* window, int button, int action, int mods) {
     Visualizer *viz = static_cast<Visualizer*>(glfwGetWindowUserPointer(window));
     viz->camera.on_mouse_button(button, action);
@@ -686,7 +759,7 @@ void Visualizer::scroll_callback(GLFWwindow* window, double xoffset, double yoff
 }
 
 void Visualizer::key_callback(GLFWwindow* window, int key, int scancode, int action, int mods) {
-    if (action != GLFW_PRESS) return;
+    if (action != GLFW_PRESS && action != GLFW_REPEAT) return;
     Visualizer *viz = static_cast<Visualizer*>(glfwGetWindowUserPointer(window));
 
     switch (key) {
@@ -694,16 +767,34 @@ void Visualizer::key_callback(GLFWwindow* window, int key, int scancode, int act
             glfwSetWindowShouldClose(window, true);
             break;
         case GLFW_KEY_G:
-            viz->show_grid = !viz->show_grid;
-            std::cout << "Grid: " << (viz->show_grid ? "ON" : "OFF") << std::endl;
+            if (action == GLFW_PRESS) {viz->show_grid = !viz->show_grid;
+            std::cout << "Grid: " << (viz->show_grid ? "ON" : "OFF") << std::endl;}
             break;
         case GLFW_KEY_A:
-            viz->show_axes = !viz->show_axes;
-            std::cout << "Axes: " << (viz->show_axes ? "ON" : "OFF") << std::endl;
+            if (action == GLFW_PRESS) {viz->show_axes = !viz->show_axes;
+            std::cout << "Axes: " << (viz->show_axes ? "ON" : "OFF") << std::endl;}
             break;
         case GLFW_KEY_W:
-            viz->show_wireframe = !viz->show_wireframe;
-            std::cout << "Wireframe: " << (viz->show_wireframe ? "ON" : "OFF") << std::endl;
+            if (action == GLFW_PRESS) {viz->show_wireframe = !viz->show_wireframe;
+            std::cout << "Wireframe: " << (viz->show_wireframe ? "ON" : "OFF") << std::endl;}
+            break;
+        case GLFW_KEY_LEFT_BRACKET:
+            if (action == GLFW_PRESS) {if (viz->get_active_joint() != 0) viz->set_active_joint(viz->get_active_joint() - 1);
+            std::cout << "Current Active Joint: " << viz->get_active_joint() << std::endl;}
+            break;
+        case GLFW_KEY_RIGHT_BRACKET:
+            if (action == GLFW_PRESS) {if (viz->get_active_joint() != viz->get_num_dof() - 1) viz->set_active_joint(viz->get_active_joint() + 1);
+            std::cout << "Current Active Joint: " << viz->get_active_joint() << std::endl;}
+            break;
+        case GLFW_KEY_MINUS:
+            viz->robot_kinematics->set_joint_position(viz->get_active_joint(), viz->robot_kinematics->get_joint_positions()[viz->get_active_joint()] - 0.05);
+            viz->robot_kinematics->update_forward_kinematics();
+            viz->update_robot();
+            break;
+        case GLFW_KEY_EQUAL:
+            viz->robot_kinematics->set_joint_position(viz->get_active_joint(), viz->robot_kinematics->get_joint_positions()[viz->get_active_joint()] + 0.05);
+            viz->robot_kinematics->update_forward_kinematics();
+            viz->update_robot();
             break;
     }
 }
