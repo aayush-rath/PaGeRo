@@ -9,6 +9,10 @@ The queries regarding the scene geometry are purely distance based giving the si
 ## Visualization
 I have created a simplex graphics pipeline using OPENGL for visulizing the geometry with proper mouse controls. An example visualization can viewed by following the given instructions and running the test case
 
+<div align = "center">
+    <img src = "images/env.png">
+</div>
+
 ```bash
 git clone https://github.com/aayush-rath/PaGeRo.git
 
