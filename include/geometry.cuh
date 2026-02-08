@@ -92,6 +92,41 @@ struct Primitive {
     PrimitiveType type;
     PrimitiveData data;
 
+    __host__ __device__ Primitive() : type(PRIM_SPHERE) {}
+    
+    __host__ __device__ Primitive(const Primitive& other) : type(other.type) {
+        // Manual copy of union based on type
+        switch (type) {
+            case PRIM_SPHERE:
+                data.sphere = other.data.sphere;
+                break;
+            case PRIM_BOX:
+                data.box = other.data.box;
+                break;
+            case PRIM_CYLINDER:
+                data.cylinder = other.data.cylinder;
+                break;
+        }
+    }
+    
+    __host__ __device__ Primitive& operator=(const Primitive& other) {
+        if (this != &other) {
+            type = other.type;
+            switch (type) {
+                case PRIM_SPHERE:
+                    data.sphere = other.data.sphere;
+                    break;
+                case PRIM_BOX:
+                    data.box = other.data.box;
+                    break;
+                case PRIM_CYLINDER:
+                    data.cylinder = other.data.cylinder;
+                    break;
+            }
+        }
+        return *this;
+    }
+
     __host__ __device__
     double sdf(const vec3& p) const {
         switch (type) {
@@ -99,6 +134,7 @@ struct Primitive {
             case PRIM_BOX: return data.box.sdf(p);
             case PRIM_CYLINDER: return data.cylinder.sdf(p);
         }
+        return 1e10;  // FIXED: added default return
     }
 };
 
@@ -206,4 +242,35 @@ double distance(const Box& b, const Cylinder& c) {
     minDist = min(minDist, b.sdf(c.center - z * (c.height * 0.5)));
 
     return minDist;
+}
+
+__host__ __device__ __forceinline__
+double primitive_to_primitive_distance(const Primitive& prim1, const Primitive& prim2) {
+
+    if (prim1.type == PRIM_SPHERE) {
+        if (prim2.type == PRIM_SPHERE)
+            return distance(prim1.data.sphere, prim2.data.sphere);
+        else if (prim2.type == PRIM_CYLINDER)
+            return distance(prim1.data.sphere, prim2.data.cylinder);
+        else if (prim2.type == PRIM_BOX)
+            return distance(prim1.data.sphere, prim2.data.box);
+    }
+    else if (prim1.type == PRIM_CYLINDER) {
+        if (prim2.type == PRIM_SPHERE)
+            return distance(prim2.data.sphere, prim1.data.cylinder);
+        else if (prim2.type == PRIM_CYLINDER)
+            return distance(prim1.data.cylinder, prim2.data.cylinder);
+        else if (prim2.type == PRIM_BOX)
+            return distance(prim2.data.box, prim1.data.cylinder);
+    }
+    else if (prim1.type == PRIM_BOX) {
+        if (prim2.type == PRIM_SPHERE)
+            return distance(prim2.data.sphere, prim1.data.box);
+        else if (prim2.type == PRIM_CYLINDER)
+            return distance(prim1.data.box, prim2.data.cylinder);
+        else if (prim2.type == PRIM_BOX)
+            return distance(prim2.data.box, prim1.data.box);
+    }
+    
+    return 1e10;
 }
