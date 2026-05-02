@@ -1,8 +1,13 @@
 #include "visualization.cuh"
 
 
-int main() {
-    Robot robot = load_urdf("../robots/3DOFRoboticArm.urdf");
+int main(int argc, char** argv) {
+    if (argc < 2) {
+        std::cerr << "Usage: " << argv[0] << " <urdf_file> <scene_file>" << std::endl;
+        return -1;
+    }
+
+    Robot robot = load_urdf(argv[1]);
     Kinematics kinematics(robot);
 
     std::cout << "Joint type: " << (robot.joints[0].type == PRISMATIC ? "Prismatic" : "Revolute") << std::endl;
@@ -11,10 +16,7 @@ int main() {
     std::vector<std::string> shader_files = {"../visualization/shaders/vert.shader", "../visualization/shaders/frag.shader"};
     visualizer.init(shader_files);
 
-    Scene scene;
-    scene.add_sphere(vec3(2.0, 0.0, 0.5), 0.3);
-    scene.add_box(vec3(-1.5, 0.0, 0.5), vec3(0.4, 0.4, 0.4), quat4(1, 0, 0, 0));
-    scene.add_cylinder(vec3(0.0, 2.0, 0.5), 0.2, 0.8, quat4(1, 0, 0, 0));
+    Scene scene = load_scene_json(argv[2]);
 
     visualizer.set_scene(&scene);
     visualizer.set_robot(&kinematics);

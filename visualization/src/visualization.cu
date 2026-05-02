@@ -117,9 +117,9 @@ bool Visualizer::init(std::vector<std::string>& files, const char* title) {
     setup_opengl();
     setup_shaders(files[0], files[1]);
 
-    create_sphere_mesh(10, 10);
+    create_sphere_mesh(100, 100);
     create_box_mesh();
-    create_cylinder_mesh(10);
+    create_cylinder_mesh(100);
 
     std::cout << "Visualizer initialized successfully" << std::endl;
     std::cout << "\nControls:" << std::endl;
@@ -130,6 +130,8 @@ bool Visualizer::init(std::vector<std::string>& files, const char* title) {
     std::cout << "  A           : Toggle axes" << std::endl;
     std::cout << "  W           : Toggle wireframe" << std::endl;
     std::cout << "  ESC         : Exit" << std::endl;
+    std::cout << "  [   /    ]  : Previous/next joint" << std::endl;
+    std::cout << "  +   /    -  : Move joint" << std::endl;
     
     return true;
 }
@@ -567,11 +569,17 @@ void Visualizer::draw_box(const Box& box, const vec3& color) {
     float model[16];
     quat_to_mat(box.orientation, model);
 
-    for (int i = 0; i < 3; i++) {
-        model[i * 4 + 0] *= box.size.x() / 2.0;
-        model[i * 4 + 1] *= box.size.y() / 2.0;
-        model[i * 4 + 2] *= box.size.z() / 2.0;
-    }
+    model[0] *= box.size.x() / 2.0;
+    model[1] *= box.size.x() / 2.0;
+    model[2] *= box.size.x() / 2.0;
+
+    model[4] *= box.size.y() / 2.0;
+    model[5] *= box.size.y() / 2.0;
+    model[6] *= box.size.y() / 2.0;
+
+    model[8]  *= box.size.z() / 2.0;
+    model[9]  *= box.size.z() / 2.0;
+    model[10] *= box.size.z() / 2.0;
 
     model[12] = box.center.x();
     model[13] = box.center.y();
@@ -613,6 +621,7 @@ void Visualizer::draw_cylinder(const Cylinder& cylinder, const vec3& color) {
 
 void Visualizer::render() {
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+    // glClearColor(0.9f, 0.9f, 0.9f, 1.0f);
     glUseProgram(shader_program);
 
     float view[16], projection[16];
@@ -647,17 +656,15 @@ void Visualizer::render() {
         }
 
         for (const auto& prim : scene->primitives) {
-            vec3 color(0.6, 0.6, 0.8);
-            
             switch (prim.type) {
                 case PRIM_SPHERE:
-                    draw_sphere(prim.data.sphere, color);
+                    draw_sphere(prim.data.sphere, prim.color);
                     break;
                 case PRIM_BOX:
-                    draw_box(prim.data.box, color);
+                    draw_box(prim.data.box, prim.color);
                     break;
                 case PRIM_CYLINDER:
-                    draw_cylinder(prim.data.cylinder, color);
+                    draw_cylinder(prim.data.cylinder, prim.color);
                     break;
             }
         }
@@ -673,6 +680,22 @@ void Visualizer::run() {
         render();
         glfwSwapBuffers(window);
         glfwPollEvents();
+        std::vector<double> joints = robot_kinematics->get_joint_positions();
+        std::cout << "\n Joints: (";
+        for (int i = 0; i < joints.size(); i++) {
+            std::cout << joints[i] << ", ";
+        }
+        std::cout << ")\n";
+        double min_dist = std::numeric_limits<double>::max();
+        for (int i = 0; i < robot_kinematics->get_transformed_primitives().size(); i++) {
+            for (int j = 0; j < scene->primitives.size(); j++) {
+                double dist = primitive_to_primitive_distance(robot_kinematics->get_transformed_primitives()[i], scene->primitives[j]);
+                if (dist < min_dist) {
+                    min_dist = dist;
+                }
+            }
+        }
+        std::cout << "Min Distance: " << min_dist << std::endl;
     }
 }
 
@@ -706,12 +729,16 @@ void Visualizer::render_robot() {
         vec3(0.8, 0.8, 0.3),
         vec3(0.8, 0.3, 0.8),
         vec3(0.3, 0.8, 0.8),
+        vec3(0.4, 0.6, 0.6),
     };
     if (show_wireframe) {
         glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
     }
     for (int i = 0; i < robot_primitives.size(); i++) {
         draw_robot_primitive(robot_primitives[i], link_colors[i]);
+    }
+    for (int i = 0; i < robot_kinematics->get_joint_positions().size(); i++) {
+        
     }
 }
 

@@ -23,7 +23,7 @@ public:
         joint_positions.resize(robot.num_dof(), 0.0);
         link_transforms.resize(robot.links.size());
         build_kinematic_tree();
-        update_forward_kinematics(); // Initialize to zero configuration
+        update_forward_kinematics();
     }
 
     void set_joint_position(int joint_idx, double value) {
@@ -145,6 +145,9 @@ private:
         } else if (joint.type == PRISMATIC) {
             vec3 joint_motion = joint.axis * q;
             result.translation = result.translation + joint_motion;
+        } else if (joint.type == FIXED) {
+            result.translation = vec3(0,0,0);
+            result.rotation = quat4(1, 0, 0, 0);
         }
 
         return result;

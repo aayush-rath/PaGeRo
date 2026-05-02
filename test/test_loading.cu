@@ -3,6 +3,7 @@
 int main() {
     Robot robot1 = load_urdf("../robots/3DOFRoboticArm.urdf");
     Robot robot2 = load_urdf("../robots/4DOFRoboticArm.urdf");
+    Scene scene = load_scene_json("../scenes/scene.json");
     std::cout << robot1 << std::endl;
     return 0;
 }

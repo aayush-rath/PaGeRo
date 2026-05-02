@@ -40,7 +40,7 @@ struct Box{
 
         double dist = sqrt(max(dx, 0.0) * max(dx, 0.0) + max(dy, 0.0) * max(dy, 0.0) + max(dz, 0.0) * max(dz, 0.0));
         return dist + min(max_coord, 0.0);
-    }
+   }
 };
 
 struct Sphere {
@@ -91,41 +91,7 @@ union PrimitiveData {
 struct Primitive {
     PrimitiveType type;
     PrimitiveData data;
-
-    __host__ __device__ Primitive() : type(PRIM_SPHERE) {}
-    
-    __host__ __device__ Primitive(const Primitive& other) : type(other.type) {
-        // Manual copy of union based on type
-        switch (type) {
-            case PRIM_SPHERE:
-                data.sphere = other.data.sphere;
-                break;
-            case PRIM_BOX:
-                data.box = other.data.box;
-                break;
-            case PRIM_CYLINDER:
-                data.cylinder = other.data.cylinder;
-                break;
-        }
-    }
-    
-    __host__ __device__ Primitive& operator=(const Primitive& other) {
-        if (this != &other) {
-            type = other.type;
-            switch (type) {
-                case PRIM_SPHERE:
-                    data.sphere = other.data.sphere;
-                    break;
-                case PRIM_BOX:
-                    data.box = other.data.box;
-                    break;
-                case PRIM_CYLINDER:
-                    data.cylinder = other.data.cylinder;
-                    break;
-            }
-        }
-        return *this;
-    }
+    vec3 color;
 
     __host__ __device__
     double sdf(const vec3& p) const {
@@ -134,7 +100,6 @@ struct Primitive {
             case PRIM_BOX: return data.box.sdf(p);
             case PRIM_CYLINDER: return data.cylinder.sdf(p);
         }
-        return 1e10;  // FIXED: added default return
     }
 };
 
@@ -170,26 +135,84 @@ double distance(const Cylinder& a, const Cylinder& b) {
     return centerDist - (a.radius + b.radius);
 }
 
+// __host__ __device__ __forceinline__
+// double distance(const Box& a, const Box& b) {
+//     vec3 axes[3] = {
+//         rotate(vec3(1,0,0), a.orientation),
+//         rotate(vec3(0,1,0), a.orientation),
+//         rotate(vec3(0,0,1), a.orientation)
+//     };
+
+//     double minDist = 1e30;
+
+//     for (int i = 0; i < 3; ++i) {
+//         vec3 p = a.center + axes[i] * (a.size[i] * 0.5);
+//         minDist = min(minDist, b.sdf(p));
+//         p = a.center - axes[i] * (a.size[i] * 0.5);
+//         minDist = min(minDist, b.sdf(p));
+//     }
+
+//     return minDist;
+// }
+
 __host__ __device__ __forceinline__
 double distance(const Box& a, const Box& b) {
-    vec3 axes[3] = {
+    // 1. Get local axes for both boxes
+    vec3 axes_a[3] = {
         rotate(vec3(1,0,0), a.orientation),
         rotate(vec3(0,1,0), a.orientation),
         rotate(vec3(0,0,1), a.orientation)
     };
+    vec3 axes_b[3] = {
+        rotate(vec3(1,0,0), b.orientation),
+        rotate(vec3(0,1,0), b.orientation),
+        rotate(vec3(0,0,1), b.orientation)
+    };
 
-    double minDist = 1e30;
+    vec3 h_a = a.size * 0.5;
+    vec3 h_b = b.size * 0.5;
+    vec3 T = b.center - a.center;
 
-    for (int i = 0; i < 3; ++i) {
-        vec3 p = a.center + axes[i] * (a.size[i] * 0.5);
-        minDist = min(minDist, b.sdf(p));
-        p = a.center - axes[i] * (a.size[i] * 0.5);
-        minDist = min(minDist, b.sdf(p));
+    double maxSeparation = -1e30;
+
+    // Helper to check a specific axis
+    auto checkAxis = [&](vec3 L) {
+        double len = length(L);
+        if (len < 1e-6) return; // Skip degenerate cross products
+        L = L / len;
+
+        // Project the distance between centers onto axis L
+        double distBetweenCenters = abs(dot(T, L));
+
+        // Project the radii (half-widths) of both boxes onto axis L
+        double radius_a = abs(dot(axes_a[0] * h_a.x(), L)) + 
+                          abs(dot(axes_a[1] * h_a.y(), L)) + 
+                          abs(dot(axes_a[2] * h_a.z(), L));
+        
+        double radius_b = abs(dot(axes_b[0] * h_b.x(), L)) + 
+                          abs(dot(axes_b[1] * h_b.y(), L)) + 
+                          abs(dot(axes_b[2] * h_b.z(), L));
+
+        // Separation = (Distance between centers) - (Sum of projected radii)
+        double separation = distBetweenCenters - (radius_a + radius_b);
+        if (separation > maxSeparation) maxSeparation = separation;
+    };
+
+    // Test 3 axes of Box A
+    for (int i = 0; i < 3; i++) checkAxis(axes_a[i]);
+
+    // Test 3 axes of Box B
+    for (int i = 0; i < 3; i++) checkAxis(axes_b[i]);
+
+    // Test 9 cross-product axes (edge-edge cases)
+    for (int i = 0; i < 3; i++) {
+        for (int j = 0; j < 3; j++) {
+            checkAxis(cross(axes_a[i], axes_b[j]));
+        }
     }
 
-    return minDist;
+    return maxSeparation;
 }
-
 
 __host__ __device__ __forceinline__
 double distance(const Sphere& s, const Box& b) {

@@ -10,9 +10,9 @@ struct Scene {
     Primitive* send_primitives_to_device() const;
     int num_primitives() const { return primitives.size(); }
 
-    void add_sphere(vec3 center, double radius);
-    void add_box(vec3 center, vec3 size, quat4 orientation);
-    void add_cylinder(vec3 center, double radius, double half_height, quat4 orientation);
+    void add_sphere(vec3 center, double radius, vec3 color);
+    void add_box(vec3 center, vec3 size, quat4 orientation, vec3 color);
+    void add_cylinder(vec3 center, double radius, double half_height, quat4 orientation, vec3 color);
 };
 
 

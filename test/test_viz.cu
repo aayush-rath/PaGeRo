@@ -6,12 +6,12 @@ int main() {
     Scene scene;
     Robot robot1 = load_urdf("../robots/3DOFRoboticArm.urdf");
     
-    scene.add_box(vec3(0, 0.4, 0.5), vec3(0.5, 0.5, 0.5), quat4(1, 0, 0, 0));
-    scene.add_sphere(vec3(2, 0, 0.5), 0.5);
-    scene.add_cylinder(vec3(-2, 0, 1), 0.3, 1.0, quat4(1, 0, 0, 0));
+    scene.add_box(vec3(0, 0.4, 0.5), vec3(0.5, 0.5, 0.5), quat4(1, 0, 0, 0), vec3(0.6, 0.9, 0.8));
+    scene.add_sphere(vec3(2, 0, 0.5), 0.5, vec3(0.6, 0.9, 0.8));
+    scene.add_cylinder(vec3(-2, 0, 1), 0.3, 1.0, quat4(1, 0, 0, 0), vec3(0.6, 0.9, 0.8));
 
     quat4 rot = quat_from_axis_angle(vec3(0, 0, 1), M_PI / 4);
-    scene.add_box(vec3(0, 2, 0.5), vec3(0.3, 0.3, 0.3), rot);
+    scene.add_box(vec3(0, 2, 0.5), vec3(0.3, 0.3, 0.3), rot, vec3(0.6, 0.9, 0.8));
 
     std::cout << "Scene has " << scene.num_primitives() << " primitives" << std::endl;
     for (size_t i = 0; i < scene.primitives.size(); i++) {
@@ -31,8 +31,7 @@ int main() {
     viz.set_show_ground(true);
     viz.set_ground_height(0.0);
     viz.set_scene(&scene);
-    
-    // Run (blocking call)
+
     viz.run();
     
     return 0;
